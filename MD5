@@ -1,13 +1,13 @@
-5a2955a4587175538912182ffab35894 *DESCRIPTION
+f92fc77cb04a43a749b5743bf4f53707 *DESCRIPTION
 a576b4bff49f974b996629aa853da91e *NAMESPACE
-661b9ea6c1020823094848cfe116ee9d *NEWS.md
+689657bc06c2103955ae76dba06d489b *NEWS.md
 800c230bb989c1847abb6cd66b9e4c55 *R/attach_bib.R
 6899e731f30bb6e1c7564d79d8c98c32 *R/c4a.R
 87b7d0081e68b20b000f71476e49245d *R/c4a_citation.R
 905d415f501e0edff9163df4538fad06 *R/c4a_cl_plot.R
 0058da1f5ba78d60e4ca0eaad1d2789a *R/c4a_data.R
 c00ad36f014905d1f63d916a04902c9b *R/c4a_default_contrast.R
-8c7f891738c70221d43a3e37b7e0e9fe *R/c4a_gui.R
+85c9811287a838e19f11883d3672feee *R/c4a_gui.R
 aa6efd30845ee48f346b87c1d67646be *R/c4a_modify.R
 7d7b570f1f668a2d3ad2792a4104f4dd *R/c4a_name_convert.R
 9dc30cf36680d48c6fc8b881ad9c755e *R/c4a_palettes.R
@@ -47,6 +47,7 @@ a5842a3a4f8037cf6cb022ee16372af0 *build/vignette.rds
 06a674ea841f629d5dd0428b7a0462a5 *inst/img/blues2x.gif
 b8125072122588412f1026ad800a3199 *inst/img/cl_plot1x.gif
 8d64a20cc6b8849257173f152cfba6ba *inst/img/cl_plot2x.gif
+d69ffb6c4253219f12d5dac8382f8436 *inst/img/cols4all_logo.png
 2341db62f7b0d4e23d4c8275856e355e *inst/img/conf_linesD.gif
 2341db62f7b0d4e23d4c8275856e355e *inst/img/conf_linesD1x.gif
 baf6bc6a884edc4e86533c729ca8fdb9 *inst/img/conf_linesD2x.gif
@@ -99,7 +100,6 @@ e76798d873a4d7df4e2b553cc50eb6c3 *man/cols4all-package.Rd
 18004beb18c5efe562fb0536b6084cf7 *man/figures/README-unnamed-chunk-11-1.png
 17b8da723e0c528a105b9b5d01e91e94 *man/figures/README-unnamed-chunk-11-2.png
 412b785c1b0237a2b21a92da05b13757 *man/figures/README-unnamed-chunk-9-1.png
-d69ffb6c4253219f12d5dac8382f8436 *man/figures/logo.png
 2d3dd121433d5692bb001e16b9c83f50 *man/scales_ggplot2.Rd
 92b567fca5b2d0f546991a0af158b537 *vignettes/cols4all.Rmd
 639d3a792d2bc6338035ca3498c43c15 *vignettes/dash-3.png
