@@ -35,79 +35,6 @@
 "_PACKAGE"
 
 
-#' Set cols4all options
-#'
-#' Get or set global options for c4a. Works similar as the base function `options`
-#'
-#' @param ... Use character values to retrieve options. To set options, either use named arguments (where the names refer to the options), a list that consists of those options.
-#'
-#' @details
-#'
-#' | **Option**        | **Description**   |
-#' | ------------- | ------------- |
-#' | defaults		|  Default palettes per type |
-#' | CBF_th		|  Parameters that label a palette as color blind friendly  |
-#' | CBU_th		| Parameters that label a palette as color blind unfriendly |
-#' | CrangeFair		| Maximum chroma range for which a palette is considered harmonic |
-#' | CrangeUnfair		| Minimum chroma range for which a palette is considered disharmonic  |
-#' | LrangeFair		| Maximum luminance range for which a palette is considered harmonic |
-#' | LrangeUnfair		| Minimum luminance range for which a palette is considered disharmonic |
-#' | Cintense		| Chroma of colors that are considered intense |
-#' | Cpastel		| Chroma of colors that are considered 'pastel' |
-#' | HwidthDivRainbow		| A diverging palette is labeled as 'rainbow hue' if HwidthL or HwidthR are at least `HwidthDivRainbow` |
-#' | HwidthDivSingle		| A diverging palette is labeled as 'single hue' if HwidthL and HwidthR are at most `HwidthDivSingle` |
-#' | HwidthSeqRainbow | A sequential palette is labeled as 'rainbow hue' if Hwidth is at least `HwidthSeqRainbow` |
-#' | HwidthSeqSingle | A sequential palette is labeled as 'single hue' if Hwidth is at most `HwidthSeqSingle` |
-#'
-#' @md
-#' @name c4a_options
-#' @rdname c4a_options
-#' @return A list of options
-#' @export
-c4a_options = function(...) {
-	lst = list(...)
-	e1 = parent.frame()
-	nms = c("defaults", "CBF_th", "CBU_th", "CrangeFair", "CrangeUnfair", "LrangeFair", "LrangeUnfair", "Cintense", "Cpastel", "HwidthDivRainbow", "HwidthDivSingle", "HwidthSeqRainbow", "HwidthSeqSingle", "boynton_weights")
-
-	o = as.list(.C4A)[nms]
-
-	if (length(lst) >= 1 && is.null(names(lst))) {
-		arg = lst[[1]]
-		if (is.list(arg)) {
-			## case 1: option list is given
-			args = arg
-			if (length(lst) > 1) warning("Only the first argument is used; the other arguments are ignored.")
-		} else {
-			## case 2: option name is given
-			args = sapply(lst, "[", 1)
-			return(o[args])
-		}
-	} else {
-		## case 3: named options are set
-		## case 4: c4a_options is called without arguments
-		args = lapply(as.list(match.call()[-1]), eval, envir = e1)
-	}
-
-
-	if (!length(args)) {
-		# case 4
-		return(o)
-	} else {
-		# case 1 and 3
-		backup = o[names(args)]
-		o[names(args)] = args # check_named_items(args, backup)
-
-		list2env(args, envir = .C4A)
-
-		if ("boynton_weights" %in% names(args)) {
-			.C4A$name_data = create_name_data()
-		}
-
-		invisible(backup)
-	}
-}
-
-
 
 do_cellspec = function(lst) {
 	do.call(kableExtra::cell_spec, lst)
@@ -119,6 +46,8 @@ do_cellspec = function(lst) {
 	assign("s", .s, envir = .C4A)
 	assign("zbib", .zbib, envir = .C4A)
 	assign("zdes", .zdes, envir = .C4A)
+	assign("names_NL_model", names_NL_model, envir = .C4A)
+	assign("names_NL_colors", names_NL_colors, envir = .C4A)
 	name_data = rdata$name_data
 	assign("name_data", name_data, envir = .C4A)
 
@@ -126,14 +55,15 @@ do_cellspec = function(lst) {
 	attach_bib()
 
 	with(.C4A,{
-		defaults = c(cat = "tol.muted", seq = "hcl.blues2", div = "hcl.purple_green", bivs = "c4a.bu_br_bivs", bivc = "met_monet", bivd = "c4a.pu_gn_bivd", bivg = "c4a.br_bivg")
+		defaults = c(cat = "cols4all.line7", seq = "kovesi.blue", div = "cols4all.pu_gn_div", cyc = "scico.roma_o", bivs = "cols4all.bu_br_bivs", bivc = "met_monet", bivd = "cols4all.pu_gn_bivd", bivg = "cols4all.br_bivg")
 
-		score_x100 = c("min_dist", "min_step", "max_step", "inter_wing_dist", "CRmin", "CRwt", "CRbk", "Blues")
+		score_x100 = c("min_dist", "min_step", "max_step", "inter_wing_dist", "tri_ineq", "CRmin", "CRwt", "CRbk", "Blues")
 
 		#color-blind-friendly thresholds
 		CBF_th = list(cat = c(min_dist = 10),
-					  seq = c(min_step = 5),
-					  div = c(inter_wing_dist = 10, min_step = 5),
+					  seq = c(min_dist = 5, tri_ineq = 2),
+					  cyc = c(min_dist = 5, tri_ineq = 2),
+					  div = c(inter_wing_dist = 10, min_step = 5, tri_ineq = 2),
 					  bivs = c(inter_wing_dist = 7, min_step = 3),
 					  bivc = c(min_dist = 10),
 					  bivd = c(inter_wing_dist = 7, min_step = 3),
@@ -144,19 +74,29 @@ do_cellspec = function(lst) {
 
 		# unfriendly (rolling eyes)
 		CBU_th = list(cat = c(min_dist = 2),
-					  seq = c(min_step = 1),
-					  div = c(inter_wing_dist = 4, min_step = 1),
-					  bivs = c(inter_wing_dist = 3, min_step = 1),
+					  seq = c(min_dist = 2, tri_ineq = 0),
+					  cyc = c(min_dist = 2, tri_ineq = 0),
+					  div = c(inter_wing_dist = 4, min_step = 2, tri_ineq = 0),
+					  bivs = c(inter_wing_dist = 3, min_step = 2),
 					  bivc = c(min_dist = 2),
-					  bivd = c(inter_wing_dist = 3, min_step = 1),
-					  bivg = c(inter_wing_dist = 3, min_step = 1))
+					  bivd = c(inter_wing_dist = 3, min_step = 2),
+					  bivg = c(inter_wing_dist = 3, min_step = 2))
 
 		Cgray = 10 # maximum chroma value to be considered as gray (used for Hwidth and c4a_add_series)
 
-		CrangeFair = 50
-		CrangeUnfair = 80
 		LrangeFair = 30
 		LrangeUnfair = 50
+		CrangeFair = 50
+		CrangeUnfair = 80
+
+		Lrange_mid = 50
+		Lrange_steep = 0.1
+		Crange_mid = 80
+		Crange_steep = 0.07
+
+		LC_fair = 75
+		LC_unfair = 25
+
 
 		Blues = 3
 		contrastEL = 1.2 # Equiluminance
@@ -169,15 +109,19 @@ do_cellspec = function(lst) {
 		HwidthSeqRainbow = 180 # a sequential palette is labeled as 'rainbow hue' if Hwidth is at least HwidthSeqRainbow
 		HwidthSeqSingle = 15 # a sequential palette is labeled as 'single hue' if Hwidth is at most HwidthSeqSingle
 
+		Hspread = 90 # from which number between 0 and 100, is a palette labeled "Hue spread" (cat)
+
 		sc = c("min_dist",
 			   "nameability",
 			   "min_step",
 			   "max_step",
-			   "inter_wing_dist")
+			   "inter_wing_dist",
+			   "tri_ineq")
 
 		types = c("Categorical" = "cat",
 				  "Sequential" = "seq",
 				  "Diverging" = "div",
+				  "Cyclic" = "cyc",
 				  "Bivariate (sequential x sequential)" = "bivs",
 				  "Bivariate (sequential x categorical)" = "bivc",
 				  "Bivariate (sequential x diverging)" = "bivd",
@@ -186,6 +130,7 @@ do_cellspec = function(lst) {
 		types1 = c("Categorical" = "cat",
 				   "Sequential" = "seq",
 				   "Diverging" = "div",
+				   "Cyclic" = "cyc",
 				   "Bivariate" = "biv")
 
 		types2 = list(biv = c("Sequential x sequential" = "bivs",
@@ -193,18 +138,20 @@ do_cellspec = function(lst) {
 							  "Sequential x diverging" = "bivd",
 							  "Sequential x desaturated" = "bivg"))
 
-		type_info = data.frame(type = c("cat", "seq", "div", "bivs", "bivc", "bivd", "bivg"),
+		type_info = data.frame(type = c("cat", "seq", "div", "cyc", "bivs", "bivc", "bivd", "bivg"),
 							   description = c("categorical",
 							   				"sequential",
 							   				"diverging",
+							   				"cyclic",
 							   				"bivariate (sequential x sequential)", "bivariate (sequential x categorical)", "bivariate (sequential x diverging)", "bivariate (sequential x desaturated)"))
 
-		ndef = c(cat = Inf, seq = 7, div = 9, bivc = Inf, bivs = 3, bivd = 3, bivg  = 3) # Inf meaning maximum available colors
-		mdef = c(cat = 1, seq = 1, div = 1, bivc = 3, bivs = NA, bivd = 3, bivg  = 3) # NA meaning same as ndef
+		ndef = c(cat = Inf, seq = 7, cyc = 9, div = 9, bivc = Inf, bivs = 3, bivd = 3, bivg  = 3) # Inf meaning maximum available colors
+		mdef = c(cat = 1, seq = 1, cyc = 1, div = 1, bivc = 3, bivs = NA, bivd = 3, bivg  = 3) # NA meaning same as ndef
 
 		CB_ranges = list(cat = list(min_dist = c(0, 20)),
-						 seq = list(min_step = c(0, 20), max_step = c(0, 20)),
-						 div = list(inter_wing_dist = c(0, 20), min_step = c(0, 20)),
+						 seq = list(min_dist = c(0, 20), tri_ineq = c(-50, 50)),
+						 cyc = list(min_dist = c(0, 20), tri_ineq = c(-50, 50)),
+						 div = list(inter_wing_dist = c(0, 20), min_step = c(0, 20), tri_ineq = c(-50, 50)),
 						 bivs = list(inter_wing_dist = c(0, 20), min_step = c(0, 20)),
 						 bivc = list(min_dist = c(0, 20)),
 						 bivd = list(inter_wing_dist = c(0, 20), min_step = c(0, 20)),
@@ -218,20 +165,44 @@ do_cellspec = function(lst) {
 
 
 		rgb = c("Blues")
-		hcl = c("Cmax", "H", "HL", "HR", "Lmid", "Hwidth", "HwidthL", "HwidthR", "Lrange", "Crange", "CRmin", "CRwt", "CRbk")
 
-		sortRev = c("cbfriendly", "harmonyRank", "fairRank", "Cmax", "min_dist", "nameability", "Lmid", "Hwidth", "HwidthL", "HwidthR", "nmax", "Blues")
+		# for score file
+		hcl = c("Cmax", "H", "HL", "HR", "Lmid", "Hwidth", "HwidthL", "HwidthR", "Lrange", "Crange", "fairness", "CRmin", "CRwt", "CRbk")
 
-		boynton_weights = c(Green = 1, Blue = 1, Purple = 1, Pink = 1,
-					Yellow = 1, Brown = 1, Orange = 1, Red = 1,
-					White = 1, Gray = 1, Black = 1)
+		# for table (with derived variables)
+		hcl2 = c("Cmax", "H", "HL", "HR", "Lmid", "Hwidth", "Hspread", "HwidthL", "HwidthR", "Lrange", "Crange", "fairness", "CRmin", "CRwt", "CRbk")
 
+		sortRev = c("cbfriendly", "harmonyRank", "fairness", "Cmax", "min_dist", "tri_ineq", "nameability", "Lmid", "Hwidth", "Hspread", "HwidthL", "HwidthR", "nmax", "CRwt", "CRbk", "Blues")
+
+		# naming_fun = "naming_dist_centroid"
+		# naming_colors = c(Green = "#859F68",
+		# 				  Blue = "#5792A4",
+		# 				  Purple = "#7E6A89",
+		# 				  Pink = "#C7848F",
+		# 				  Yellow = "#E7B352",
+		# 				  Brown = "#8F5F49",
+		# 				  Orange = "#D97447",
+		# 				  Red = "#9D4149",
+		# 				  White = "#D8CEBA",
+		# 				  Gray = "#868782",
+		# 				  Black = "#394245") #boynton
+		# naming_softmax = list(a = 2, th = .1)
+		# naming_fun_args = list(weights = c(Green = 1, Blue = 1, Purple = 1.1, Pink = 0.9,
+		# 								   Yellow = 1, Brown = 1, Orange = 1, Red = 1.05,
+		# 								   White = 0.7, Gray = 0.7, Black = 1.05))
+		#
+
+		naming_fun = "naming_sample_from_distribution"
+		naming_fun_args = list(model = names_NL_model)
+		naming_colors = names_NL_colors
+		naming_softmax = list(a = 8, th = .1)
 
 		labels = c(min_dist = "Minimum distance",
 				   nameability = "Nameability",
 				   min_step = "Minimum step",
 				   max_step = "Maximum step",
 				   inter_wing_dist = "Inter-wing-distance",
+				   tri_ineq = "Triangle inequality",
 				   Crel = "Chroma (rel) max",
 				   Cmax = "Chroma max",
 				   H = "Hue middle",
@@ -239,6 +210,7 @@ do_cellspec = function(lst) {
 				   HR = "Hue middle R",
 				   Lmid = "Luminance mid",
 				   Hwidth = "Hue width",
+				   Hspread = "Hue spread",
 				   HwidthL = "Hue width L",
 				   HwidthR = "Hue width R",
 				   Lrange = "Luminance range",
@@ -251,11 +223,11 @@ do_cellspec = function(lst) {
 				   chroma = "Vivid",
 				   fair = "Fair",
 				   nameable = "Naming",
-				   fairRank = "Fair",
-				   hueType = "Hue type",
-				   contrast = "&nbsp;&nbsp;Low contrast",
-				   contrastWT = "&nbsp;&nbsp;Low contrast",
-				   contrastBK = "&nbsp;&nbsp;Low contrast",
+				   fairness = "Fairness",
+				   hues = "Hues",
+				   equiluminance = "Contrast (between)",
+				   contrastWT = "Contrast (white)",
+				   contrastBK = "Contrast (black)",
 				   float = "3D Blues",
 				   Blues = "Dominant blues",
 				   nmax = "Max number")
@@ -263,13 +235,15 @@ do_cellspec = function(lst) {
 		th = list(series = list("Series", tooltip = "Palette series. See last column for references"),
 				  name = list("Name", tooltip = "Palette name"),
 				  cbfriendly = list("Colorblind-friendly", tooltip = "Is the palette suitable for colorblind people?"),
-				  chroma = list("Vivid", tooltip = "Are the colors vivid  or pastel?"),
+				  chroma = list("Vivid", tooltip = "Are there any vivid (saturated) colors?"),
 				  nmax = list("Max number", tooltip = "Maximum number of colors"),
 				  fair = list("Fair", tooltip = "Do colors stand out about equally?"),
-				  contrast = list("Low contrast", tooltip = "Colors with low contrast are hard to separate. Are there any?"),
-				  nameable = list("Naming", tooltip = "Are the colors are easy to name? If so, they are also easy to remember"),
+				  contrastWT = list("Contrast\nwt", tooltip = "Contrast with white (wt), black (bk), and between the colors (equiluminance)."),
+				  contrastBK = list("bk", tooltip = ""),
+				  equiluminance = list("eq.", tooltip = "If colors are equiluminant (i.e. very low contrast) visual illusions may appear"),
+				  nameable = list("Naming", tooltip = "Are the colors are easy to name? If so, they are also easy to remember (in development)"),
 				  float = list("3D Blues", tooltip = "Is there a pure blue color that may cause a 3D illusion?"),
-				  hueType = list("Hue type", tooltip = "How many different hues are used?"),
+				  hues = list("Hues", tooltip = "How many different hues are used?"),
 				  references = list("References", tooltip = "Click to copy the colors and references"))
 
 		tc = list(cbfriendly = list('NA' = "",
@@ -278,10 +252,14 @@ do_cellspec = function(lst) {
 									'1' = list("&#9786;", extra_css="font-size: 80%;", tooltip = "Colorblind-friendly! Be careful with points and lines", escape = FALSE),
 									'-1' = list("&#128064;", extra_css ="font-size: 60%;", tooltip = "Be careful! Some colors are hard to distinguish by color blind people (see tab 'Color Blind Friendliness'", escape = FALSE)),
 				  chroma = list('NA' = "",
-				  			  'H' = list("&#x1f576;", tooltip = "Vivid colors (high chroma): ideal for small important objects to stand out (e.g. markers on a map), but less suited for space filling visualizations (see tab 'HCL Analysis')", escape = FALSE),
+				  			  'H' = list("&#x1f576;", tooltip = "Vivid colors (high chroma) present: ideal for small important objects to stand out (e.g. markers on a map), but less suited for space filling visualizations because it may cause eye fatigue (see tab 'HCL Analysis')", escape = FALSE),
 				  			  'M' = "",
-				  			  'L' = list("&#10057;", tooltip = "Pastel colors (low chroma): ideal for space filling visualizations, such as choropleths (see tab 'HCL Analysis')", escape = FALSE, extra_css = "font-size: 70%;")), #&#9729; &#10020;
-				  hueType = list(seq = list('NA' = "",
+				  			  'L' = list("&#10057;", tooltip = "All colors are pastel colors (low chroma): ideal for space filling visualizations, such as choropleths (see tab 'HCL Analysis')", escape = FALSE, extra_css = "font-size: 70%;")), #&#9729; &#10020;
+				  hues = list(cat = list('NA' = "",
+				  					   'RH' = list("&#127752;",
+				  					   			tooltip = "Hues from the whole hue spectrum are used (see tab 'HCL Analysis')",
+				  					   			escape = FALSE, extra_css = "font-size: 150%; vertical-align: -0.1em; line-height: 0px;")),
+				  			 seq = list('NA' = "",
 				  						  'MH' = "",
 				  						  'RH' = list("&#127752;",
 				  						  			tooltip = "Spectral (&#34;rainbow&#34;) palette: easy to distinguish colors, but less suitable for quantitative analysis",
@@ -341,23 +319,23 @@ do_cellspec = function(lst) {
 				  nameable = list('NA' = "",
 				  				  'FALSE' =  "",
 				  				  'TRUE' = list("&#10023;",
-				  				  			  tooltip = "Colors are easy to name, and therefore, easy to remember",
+				  				  			  tooltip = "Colors are easy to name, and therefore, easy to remember (in development)",
 				  				  			  escape = FALSE, extra_css = "font-size: 130%; vertical-align: -0.1em; line-height: 0px;")),
-				  contrast = list('NA' = "",
+				  equiluminance = list('NA' = "",
 				  				'FALSE' =  "",
-				  				'TRUE' = list("&#127937;",
-				  							  tooltip = "Very low contrast between some colors; borders are needed (see tab 'Contrast')",
-				  							  escape = FALSE, extra_css = "font-size: 130%; vertical-align: -0.1em; line-height: 0px; margin-right: -10px;")),
+				  				'TRUE' = list("&#43612;",
+				  							  tooltip = "Very low contrast between some colors (equiluminance); borders needed (see tab 'Contrast')",
+				  							  escape = FALSE, extra_css = "font-size: 130%; vertical-align: -0.1em; line-height: 0px;")),
 				  contrastWT = list('NA' = "",
-				  				  'FALSE' =  "",
-				  				  'TRUE' = list("&#127987;",
-				  				  			  tooltip = "Low contrast with white for printing text (see tab 'Contrast')",
-				  				  			  escape = FALSE, extra_css = "font-size: 130%; vertical-align: -0.1em; line-height: 0px; margin-right: -10px;")),
+				  				  'FALSE' =  list("&#127987;",
+				  				  				tooltip = "Good contrast with white for text and lines (see tab 'Contrast')",
+				  				  				escape = FALSE, extra_css = "font-size: 130%; vertical-align: -0.1em; line-height: 0px; margin-right: -10px;"),
+				  				  'TRUE' = ""),
 				  contrastBK = list('NA' = "",
-				  				  'FALSE' =  "",
-				  				  'TRUE' = list("&#127988;",
-				  				  			  tooltip = "Low contrast with black for printing text  (see tab 'Contrast')",
-				  				  			  escape = FALSE, extra_css = "font-size: 130%; vertical-align: -0.1em; line-height: 0px;")),
+				  				  'FALSE' =  list("&#127988;",
+				  				  				tooltip = "Good contrast with black for text and lines (see tab 'Contrast')",
+				  				  				escape = FALSE, extra_css = "font-size: 130%; vertical-align: -0.1em; line-height: 0px; margin-right: -10px;"),
+				  				  'TRUE' = ""),
 				  float = list('NA' = "",
 				  			 'FALSE' = "",
 				  			 'TRUE' = list("&#128313;",
@@ -366,8 +344,8 @@ do_cellspec = function(lst) {
 		)
 
 
-		nmax = c(cat = 36, seq = 15, div = 15, bivs = 7, bivc = 7, bivd = 7, bivg = 7)
-		nmin = c(cat = 1, seq = 2, div = 3, bivs = 2, bivc = 2, bivd = 3, bivg = 2)
+		nmax = c(cat = 36, seq = 15, cyc = 15, div = 15, bivs = 7, bivc = 10, bivd = 7, bivg = 7)
+		nmin = c(cat = 1, seq = 2, cyc = 3, div = 3, bivs = 2, bivc = 2, bivd = 3, bivg = 2)
 		mdef = c(bivc = 5, bivd = 5, bivg = 5)
 		matrix_breaks = list(CR = c(1, 1.2, 1.5, 2, 3, 4.5, 7), dist = c(0, 2, 5, 10, 15))
 		matrix_pchs = list(CR = c(15, 17, 16, 1, 1, 2, 0), dist = c(15, 17, 16, 16, 1))

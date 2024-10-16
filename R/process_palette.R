@@ -1,4 +1,7 @@
-process_palette = function(pal, type, colNA = NA, take.gray.for.NA = TRUE, remove.other.grays = FALSE, remove.blacks = TRUE, light.to.dark = TRUE, remove.names = TRUE, biv.method = "byrow", space = "rgb", range_matrix_args = list()) {
+process_palette = function(pal, type, colNA = NA, take.gray.for.NA = FALSE, remove.other.grays = FALSE, remove.blacks = NA, remove.whites = NA, light.to.dark = TRUE, remove.names = TRUE, biv.method = "byrow", space = "rgb", range_matrix_args = list()) {
+
+	if (is.na(remove.blacks)) remove.blacks = (type == "cat")
+	if (is.na(remove.whites)) remove.whites = (type == "cat")
 
 	# maybe need to reindex
 	index = attr(pal, "index")
@@ -9,6 +12,13 @@ process_palette = function(pal, type, colNA = NA, take.gray.for.NA = TRUE, remov
 		pal = create_biv_palette(pal, biv.method)
 	}
 
+	if (type == "cyc") {
+		if (pal[1] != tail(pal, 1)) {
+			pal = c(pal, pal[1])
+		}
+	}
+
+
 	hcl = get_hcl_matrix(pal)
 
 	#specplot(hcl(h=seq(0,360,by=10), c = 0, l= 15))
@@ -16,13 +26,28 @@ process_palette = function(pal, type, colNA = NA, take.gray.for.NA = TRUE, remov
 	#specplot(hcl(h=seq(0,360,by=10), c = 10, l= 5))
 	#specplot(hcl(h=seq(0,360,by=10), c = 15, l= 0))
 	if (remove.blacks && type == "cat") {
-		isB = (hcl[,3] + hcl[,2]) <= 15
+		isB = ((hcl[,3] + hcl[,2]) <= 15) | (hcl[,2] == 0)
 		if (all(isB)) {
 			message("Palette contains only (almost) blacks. Therefore remove.blacks is set to FALSE")
 			remove.blacks = FALSE
 		} else if (any(isB)) {
 			pal = pal[!isB]
 			hcl = hcl[!isB,]
+		}
+	}
+
+	#specplot(hcl(h=seq(0,360,by=10), c = 0, l= 15))
+	#specplot(hcl(h=seq(0,360,by=10), c = 5, l= 10))
+	#specplot(hcl(h=seq(0,360,by=10), c = 10, l= 5))
+	#specplot(hcl(h=seq(0,360,by=10), c = 15, l= 0))
+	if (remove.whites && type == "cat") {
+		isW = hcl[,2] <= 3 & hcl[,3] >= 99
+		if (all(isW)) {
+			message("Palette contains only (almost) whites. Therefore remove.whites is set to FALSE")
+			remove.whites = FALSE
+		} else if (any(isW)) {
+			pal = pal[!isW]
+			hcl = hcl[!isW,]
 		}
 	}
 
@@ -68,30 +93,46 @@ process_palette = function(pal, type, colNA = NA, take.gray.for.NA = TRUE, remov
 		reversed = FALSE
 	}
 
+
+
 	if (is.na(colNA)) {
 		if (substr(type, 1, 3) == "biv") {
 			colNA = "#FFFFFF"
 		} else {
-			# first candidates: choose NA from grays, such that luminance is at most 0.3 lighter and not darker than the lightest resp. darkest color.
+			# first candidates: choose NA from grays: for bright palette prefer even lighter grey, dark palettes dark gray or black
 			# prefer lightest gray
-			gray_range = c(min(hcl[,3]/100), min(1, (max(hcl[,3]/100) + 0.3)))
-			candidates = list(grDevices::gray.colors(10, start = gray_range[1], end = gray_range[2]),
-							  grDevices::hcl(h = seq(0, 340, by = 20), c = 30, l = 70),
-							  grDevices::hcl(h = seq(0, 340, by = 20), c = 50, l = 70))
+			gray_range = range(hcl[,3]) / 100
 
-			colNA = "#FFFFFF"
-			for (cand in candidates) {
-				pal2 = c(pal, cand)
-				m = sapply(c("protan", "deutan", "tritan"), function(cvd) {
-					m = get_dist_matrix(pal2, cvd = cvd)
-					m2 = m[1L:length(pal), (length(pal) + 1L):length(pal2)]
-					apply(m2, MARGIN = 2, min)
-				})
-				scores = apply(m, MARGIN = 1, min)
-				if (max(scores) >= 10) {
-					colNA = cand[which.max(scores)[1]]
-					break
-				}
+
+			candidates = list(grDevices::gray.colors(10, start = gray_range[2], end = 1),
+							  grDevices::gray.colors(10, start = gray_range[2], end = 0))
+
+			if (gray_range[2] < 0.6) {
+				# => dark palette
+				candidates = rev(candidates)
+			}
+
+			if (substr(type, 1, 3) == "cat") {
+				# restrict to ligher color for bright palettes and darker colors for dark palettes, because otherwise colNA stands out too much
+				candidates = candidates[[1]]
+			}
+
+
+			cand = unlist(candidates)
+			pal2 = c(pal, cand)
+			m = sapply(c("protan", "deutan", "tritan"), function(cvd) {
+				m = get_dist_matrix(pal2, cvd = cvd)
+				m2 = m[1L:length(pal), (length(pal) + 1L):length(pal2)]
+				apply(m2, MARGIN = 2, min)
+			})
+			scores = apply(m, MARGIN = 1, min)
+
+			# take the first with at least 10 difference (larger would be too much)
+			s10 = which(scores >= 10)
+			if (length(s10)) {
+				colNA = cand[s10[1]]
+			} else {
+				colNA = cand[which.max(scores)]
 			}
 		}
 	}
@@ -118,7 +159,7 @@ process_palette = function(pal, type, colNA = NA, take.gray.for.NA = TRUE, remov
 			index2[[w]]
 		})
 		attr(pal, "index") = index3
-	} else if (is.null(range_matrix) && type %in% c("seq", "div")) {
+	} else if (is.null(range_matrix) && type %in% c("seq", "div", "cyc")) {
 
 		rma = formals(get(paste0("range_", type)))
 		rma$n = NULL

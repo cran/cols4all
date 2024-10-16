@@ -10,8 +10,8 @@ c4a_plot_CL = function(cols, Lrange = FALSE, dark = FALSE) {
 
 	grid::pushViewport(grid::viewport(width = grid::unit(1, "snpc"), height = grid::unit(1, "snpc"), clip = TRUE))
 	grid::pushViewport(grid::viewport(layout = grid::grid.layout(3, 3,
-																 widths = grid::unit(c(2,1,2), c("lines", "null", "lines")),
-																 heights = grid::unit(c(2,1,2), c("lines", "null", "lines")))))
+																 widths = grid::unit(c(2.5,1,1), c("lines", "null", "lines")),
+																 heights = grid::unit(c(1,1,2.5), c("lines", "null", "lines")))))
 
 	sq = 2
 	marg = 1.5
@@ -29,19 +29,17 @@ c4a_plot_CL = function(cols, Lrange = FALSE, dark = FALSE) {
 		lr2 = lr + c(-marg, marg)
 
 
-
+		# white LC rectangle
 		grid::grid.rect(x = grid::unit(mean(cr2), "native"), y = grid::unit(mean(lr2), "native"),
 						width = grid::unit(diff(cr2), "native"), height = grid::unit(diff(lr2), "native"),
 						gp = grid::gpar(fill = bc, col = NA))
 
-		#grid::grid.lines(x = grid::unit(rep(.C4A$Cpastel, 2), "native"), gp = grid::gpar(col = fc, lty = 2))
-		#grid::grid.lines(x = grid::unit(rep(.C4A$Cintense, 2), "native"), gp = grid::gpar(col = fc, lty = 2))
-
-
+		# C range |----| lines
 		grid::grid.polyline(x = grid::unit(c(cr[1], cr[1], cr[1], cr[2], cr[2], cr[2]), "native"),
 							y = grid::unit(c(lr2[1] - marg * 0.5, lr2[1] - marg * 1.5, lr2[1] - marg, lr2[1] - marg, lr2[1] - marg * 0.5, lr2[1] - marg * 1.5), "native"),
 							id = c(1, 1, 2, 2, 3, 3), gp = grid::gpar(col = dc))
 
+		# don't know...
 		grid::grid.rect(x = grid::unit(mean(cr2), "native"), y = grid::unit(lr2[1] - marg * 2.75, "native"),
 						width = grid::unit(diff(cr2), "native"), height = grid::unit(marg * 2, "native"),
 						gp = grid::gpar(fill = gc, col = NA))

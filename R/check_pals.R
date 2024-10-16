@@ -11,30 +11,56 @@ check_div_pal = function(p) {
 	nh = floor(n/2)
 
 	# needed for inter_wing_dist
-	p2 = c(rampPal(p[1:nh], 9), rampPal(p[(nh+1+(!is_even)):n], 9))
-	n2 = 18
-	nh2 = n2 / 2
+
+	# 1 2 3 4 5 6 7
+	# create two wings of n2/2
+	n2 = 50
+	p2 = c(rampPal(p[1:(nh+1) ], n2/2), rampPal(p[(nh+(!is_even)):n], n2/2))
+
+	# left wing: 1...nh1_scaled, right wing nh2_scaled ... n2
+	nh1 = (n - is_even) / 2
+	nh2 = nh1 + 1 + is_even
+
+
+	nh1b = floor(nh1)
+	nh2b = ceiling(nh2)
+
+	scale = function(id) ((id - 1) / (n - 1)) * (n2 - 1) + 1
+
+	nh1_scaled = floor(scale(nh1))
+	nh2_scaled = ceiling(scale(nh2))
+
+	nh1b_scaled = floor(scale(nh1b))
+	nh2b_scaled = ceiling(scale(nh2b))
 
 	cvds = c("deutan", "protan", "tritan")
 
 	scores = t(sapply(cvds, function(cvd) {
 		inter_wing_dist = local({
 			dm = get_dist_matrix(p2, cvd = cvd)
-			min(dm[1:nh2, (nh2+1):n2])
+			min(dm[1:nh1b_scaled, nh2_scaled:n2])
+			min(dm[1:nh1_scaled, nh2b_scaled:n2])
 		})
 
-		min_step_size = local({
-			dm = get_dist_matrix(p, cvd = cvd)
-			step_sizes = mapply(function(i,j) dm[i,j], 1:(n-1), 2:n)
-			min(step_sizes)
-		})
-		c(inter_wing_dist = round(inter_wing_dist * 100), min_step = round(min_step_size * 100))
+		dm = get_dist_matrix(p, cvd = cvd)
+		step_sizes = diag(dm[1:(n-1), 2:n])
+
+		step2_sizes = diag(dm[1:(n-2), 3:n])
+
+		# should be positive
+		step12a = step2_sizes - step_sizes[1:(n-2)]
+		step12b = step2_sizes - step_sizes[2:(n-1)]
+
+		min_step_size = min(step_sizes)
+		tri_ineq = min(step12a, step12b)
+
+		c(inter_wing_dist = round(inter_wing_dist * 100), min_step = round(min_step_size * 100), tri_ineq = round(tri_ineq * 100))
 	}))
 	inter_wing_dist = min(scores[,1])
 	min_step = min(scores[,2])
+	tri_ineq = min(scores[,3])
 
-
-	sc = as(c(inter_wing_dist = inter_wing_dist, min_step = min_step), "integer")
+	sc = as(c(inter_wing_dist = inter_wing_dist, min_step = min_step, tri_ineq = tri_ineq), "integer")
 	prop = hcl_prop(p)
 	rgb = rgb_prop(p)
 
@@ -134,16 +160,32 @@ check_seq_pal = function(p) {
 
 	scores = t(sapply(cvds, function(cvd) {
 		m = get_dist_matrix(p, cvd = cvd)
-		step_sizes = mapply(function(i,j) m[i,j], 1:(n-1), 2:n)
+		step_sizes =  diag(m[1:(n-1), 2:n])# mapply(function(i,j) m[i,j], 1:(n-1), 2:n)
 		min_step_size = min(step_sizes)
 		max_step_size = max(step_sizes)
 		#mean_step_size = mean(step_sizes)
 		#step_indicator = max(abs(step_sizes - mean_step_size)) / mean_step_size
+		min_dist = min(m, na.rm = TRUE)
 
-		c(min_step = round(min_step_size * 100), max_step = round(max_step_size * 100))
+		if (n > 2) {
+			step2_sizes = diag(m[1:(n-2), 3:n])
+
+			# should be positive
+			step12a = step2_sizes - step_sizes[1:(n-2)]
+			step12b = step2_sizes - step_sizes[2:(n-1)]
+
+			tri_ineq = min(step12a, step12b)
+		} else {
+			tri_ineq = 100
+		}
+
+
+
+
+		c(min_step = round(min_step_size * 100), max_step = round(max_step_size * 100), min_dist = round(min_dist * 100), tri_ineq = round(tri_ineq * 100))
 	}))
 
-	sc = as(c(min_step = min(scores[,1]), max_step = min(scores[,2])), "integer")
+	sc = as(c(min_step = min(scores[,1]), max_step = min(scores[,2]), min_dist = min(scores[,3]), tri_ineq = min(scores[,4])), "integer")
 	prop = hcl_prop(p)
 	rgb = rgb_prop(p)
 
@@ -152,23 +194,10 @@ check_seq_pal = function(p) {
 
 # Check cyclic palette
 #
-# Check cyclic palette. Same as \code{check_seq_pal}, but also the difference between the first and last color is considered as step
-#
-# check_cyc_pal = function(p) {
-# 	n = length(p)
-# 	cvds = c("deu", "pro", "tri")
-#
-# 	scores = t(sapply(cvds, function(cvd) {
-# 		m = colorblindcheck::palette_dist(c(p, p[1]), cvd = cvd)
-# 		step_sizes = mapply(function(i,j) m[i,j], 1:n, 2:(n+1))
-# 		min_step_size = min(step_sizes)
-# 		max_step_size = max(step_sizes)
-# 		#mean_step_size = mean(step_sizes)
-# 		#step_indicator = max(abs(step_sizes - mean_step_size)) / mean_step_size
-# 		c(min_step = round(min_step_size), max_step = round(max_step_size))
-# 	}))
-# 	as.integer(c(min_step = min(scores[,1]), max_step = min(scores[,2])))
-# }
+check_cyc_pal = function(p) {
+	if (p[1] != tail(p,1)) stop("first color should be equal to last color")
+	check_seq_pal(head(p, -1))
+}
 
 # Check categorical palette
 #
@@ -199,9 +228,15 @@ is_light <- function(col) {
 
 # get hcl coordinates
 get_hcl_matrix = function(p, rounded = FALSE) {
-	x = as(hex2RGB(p), "polarLUV")@coords[,c("H", "C", "L"), drop = FALSE]
+	x = as(colorspace::hex2RGB(p), "polarLUV")@coords[,c("H", "C", "L"), drop = FALSE]
 	if (rounded) round(x) else x
 }
+
+get_hc_or_l = function(p, dim = c("H", "C", "L")) {
+	dim = match.arg(dim)
+	x = as(colorspace::hex2RGB(p), "polarLUV")@coords[, dim]
+}
+
 
 get_hcl_triple = function(p) {
 	x = get_hcl_matrix(p, rounded = TRUE)
@@ -335,6 +370,7 @@ hcl_prop = function(p) {
 	Cmax = round(max(m[,2]))
 	Lrange = round(max(m[,3]) - min(m[,3]))
 	Crange = round(max(m[,2]) - min(m[,2]))
+
 	#LCrange = round(max(Lrange * .C4A$LrangeWeight, Crange * (1-.C4A$LrangeWeight)))
 
 	CRmin = round(get_CRmin(p) * 100)

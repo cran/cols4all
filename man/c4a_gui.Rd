@@ -8,15 +8,18 @@
 c4a_gui(type = "cat", n = NA, series = "all")
 
 c4a_table(
-  type = c("cat", "seq", "div", "bivs", "bivc", "bivd", "bivg"),
+  type = c("cat", "seq", "div", "cyc", "bivs", "bivc", "bivd", "bivg"),
   n = NULL,
   m = NULL,
+  continuous = FALSE,
+  filters = character(0),
   cvd.sim = c("none", "deutan", "protan", "tritan"),
   sort = "name",
   text.format = "hex",
   text.col = "same",
   series = "all",
   range = NA,
+  colorsort = "orig",
   include.na = FALSE,
   show.scores = FALSE,
   columns = NA,
@@ -26,9 +29,13 @@ c4a_table(
 \arguments{
 \item{type}{type of palette. Run \code{\link{c4a_types}} to see the implemented types and their description. For \code{c4a_gui} it only determines which type is shown initially.}
 
-\item{n, m}{\code{n} is the number of displayed colors. For bivariate palettes \code{"biv"}, \code{n} and \code{m} are the number of columns and rows respectively. If omitted: for \code{"cat"} the full palette is displayed, for \code{"seq"} and \code{"div"}, 9 colors, and for \code{"bivs"}/\code{"bivc"}/\code{"bivd"}/\code{"bivg"} 4 columns and rows. For \code{c4a_gui} it only determines which number of colors initially.}
+\item{n, m}{\code{n} is the number of displayed colors. For bivariate palettes \code{"biv"}, \code{n} and \code{m} are the number of columns and rows respectively. If omitted: for \code{"cat"} the full palette is displayed, for \code{"seq"}, \code{"div"} and \code{"cyc"}, 7, 9, and 9 colors respectively, and for \code{"bivs"}/\code{"bivc"}/\code{"bivd"}/\code{"bivg"} 4 columns and rows. For \code{c4a_gui} it only determines which number of colors initially.}
 
 \item{series}{Series of palettes to show. See \code{\link{c4a_series}} for options. By default, \code{"all"}, which means all series. For \code{c4a_gui} it only determines which series are shown initially.}
+
+\item{continuous}{should the palettes as continuous instead of discrete. Only applicable for \code{"seq"}, \code{"div"}, and \code{"cyc"}.}
+
+\item{filters}{filters to be applied. A character vector with a subset from:\code{"nmax"} (only palettes where \code{n = nmax}, which is only applicable for categorical palettes),  \code{"cbf"} (colorblind-friendly), \code{"fair"} (fairness),\code{"naming"} (nameability),  \code{"crW"} (sufficient contrast ratio with white), and \code{"crB"} (sufficient contrast ratio with black). By default an empty vector, so no filters are applied.}
 
 \item{cvd.sim}{color vision deficiency simulation: one of \code{"none"}, \code{"deutan"}, \code{"protan"}, \code{"tritan"}}
 
@@ -39,6 +46,8 @@ c4a_table(
 \item{text.col}{The text color of the colors. By default \code{"same"}, which means that they are the same as the colors themselves (so invisible, but available for selection). \code{"auto"} means automatic: black for light colors and white for dark colors.}
 
 \item{range}{vector of two numbers that determine the range that is used for sequential and diverging palettes. Both numbers should be between 0 and 1. The first number determines where the palette begins, and the second number where it ends. For sequential palettes, 0 means the leftmost (normally lightest) color, and 1 the rightmost (often darkest) color. For diverging palettes, 0 means the middle color, and 1 both extremes. If only one number is provided, this number is interpreted as the endpoint (with 0 taken as the start). By default, it is set automatically, based on \code{n}.}
+
+\item{colorsort}{Sort the colors (\code{"cat"} only). Options: \code{"orig"} (original order), \code{"Hx"} (hue, where x is a starting number from 0 to 360), \code{"C"} (chroma), \code{"L"} (luminance)}
 
 \item{include.na}{should color for missing values be shown? \code{FALSE} by default}
 
@@ -53,6 +62,9 @@ An HMTL table (\code{kableExtra} object)
 }
 \description{
 Graphical user interface to analyse palettes. \code{c4a_table} shows a table that can be opened in the browser. \code{c4a_gui} is a graphical user interface (shiny app) around this table.
+}
+\details{
+See vignette how the properties are calculated. Parameters, such as threshold values which determined when palettes are classified as "colorblind-friendly", can be specified via \code{\link{c4a_options}}. Also the nameability score function (which is in development) can be specified there. See the examples of \code{\link{c4a_options}} for both use cases.
 }
 \examples{
 if (requireNamespace("shiny") &&
@@ -70,7 +82,7 @@ c4a_table(type = "cat")
 c4a_table(type = "seq", n = 7, sort = "H")
 
 # sort sequential palettes by hue type (how many hues are used)
-c4a_table(type = "seq", n = 5, sort = "hueType")
+c4a_table(type = "seq", n = 5, sort = "hues")
 }
 }
 \seealso{

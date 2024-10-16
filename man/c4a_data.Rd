@@ -18,10 +18,11 @@ c4a_data(
   mmax = NA,
   mdef = NA,
   format.palette.name = TRUE,
-  remove.blacks = TRUE,
-  take.gray.for.NA = TRUE,
+  remove.blacks = NA,
+  remove.whites = NA,
+  take.gray.for.NA = FALSE,
   remove.other.grays = FALSE,
-  light.to.dark = TRUE,
+  light.to.dark = FALSE,
   remove.names = TRUE,
   biv.method = "byrow",
   space = "rgb",
@@ -36,6 +37,7 @@ c4a_data_as_is(
   ...,
   format.palette.name = FALSE,
   remove.blacks = FALSE,
+  remove.whites = FALSE,
   take.gray.for.NA = FALSE,
   remove.other.grays = FALSE,
   light.to.dark = FALSE,
@@ -47,7 +49,7 @@ c4a_data_as_is(
 
 \item{xNA}{colors for missing values. Vector of the same length as x (or length 1). For \code{NA} values, the color for missing values is automatically determined (preferable a light grayscale color, but if it is indistinguishable by color blind people, a light color with a low chroma value is selected)}
 
-\item{types}{character vector of the same length as x (or length 1), which determines the type of palette: \code{"cat"}, \code{"seq"}, \code{"div"}, \code{"bivs"}, \code{"bivc"}, \code{"bivd"}, or \code{"bivg"}. See details.}
+\item{types}{character vector of the same length as x (or length 1), which determines the type of palette: \code{"cat"}, \code{"seq"}, \code{"div"}, \code{"cyc"}, \code{"bivs"}, \code{"bivc"}, \code{"bivd"}, or \code{"bivg"}. See details.}
 
 \item{series}{a character vector of the same length as x (or length 1), which determines the series.}
 
@@ -57,7 +59,7 @@ c4a_data_as_is(
 
 \item{format.palette.name}{should palette names be formatted to lowercase/underscore format?}
 
-\item{remove.blacks, take.gray.for.NA, remove.other.grays}{These arguments determine the processing of grayscale colors for categorical \code{"cat"} palettes: if \code{remove.blacks} and there are (near) blacks, these are removed first. Next, if \code{take.gray.for.NA}, \code{xNA} is \code{NA}, and a palette contains at least one grayscale color (which can also be white), this is used as color for missing values. In case there are more than one grayscale color, the lightest is taken. \code{remove.other.grays} determines what happens with the other grays.}
+\item{remove.blacks, remove.whites, take.gray.for.NA, remove.other.grays}{These arguments determine the processing of grayscale colors for categorical \code{"cat"} palettes: if \code{remove.blacks} and there are (near) blacks, these are removed first. Next, if \code{take.gray.for.NA}, \code{xNA} is \code{NA}, and a palette contains at least one grayscale color (which can also be white), this is used as color for missing values. In case there are more than one grayscale color, the lightest is taken. \code{remove.other.grays} determines what happens with the other grays.}
 
 \item{light.to.dark}{should sequential \code{"seq"} palettes be automatically ordered from light to dark?}
 
@@ -149,6 +151,7 @@ if (requireNamespace("colorblindcheck", quietly = TRUE)) {
 		requireNamespace("shinyjs") &&
 		requireNamespace("kableExtra") &&
 		requireNamespace("colorblindcheck") &&
+		requireNamespace("plotly") &&
 		interactive()) {
 		c4a_gui(series = "pinkfloyd", n = 8)
 	}
