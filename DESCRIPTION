@@ -14,20 +14,19 @@ Authors@R: c(
     person("Olivier", "Roy", role = "ctb")
 	)
 Description: Color palettes for all people, including those with color vision deficiency. Popular color palette series have been organized by type and have been scored on several properties such as color-blind-friendliness and fairness (i.e. do colors stand out equally?). Own palettes can also be loaded and analysed. Besides the common palette types (categorical, sequential, and diverging) it also includes cyclic and bivariate color palettes. Furthermore, a color for missing values is assigned to each palette.
-Version: 0.8
-Date: 2024-10-16
+Version: 0.9
 Encoding: UTF-8
-Depends: R (>= 3.5.0),
+Depends: R (>= 4.1.0),
 Imports: methods, grDevices, stats, abind, png, stringdist, colorspace
         (>= 2.1), spacesXYZ
 Suggests: colorblindcheck, kableExtra, knitr, shiny, shinyjs, ggplot2,
         scales, rmarkdown, bookdown, bibtex, plotly
-URL: https://mtennekes.github.io/cols4all/,
-        https://github.com/mtennekes/cols4all
-BugReports: https://github.com/mtennekes/cols4all/issues
+URL: https://cols4all.github.io/cols4all-R/,
+        https://github.com/cols4all/cols4all-R
+BugReports: https://github.com/cols4all/cols4all-R/issues
 RoxygenNote: 7.3.2
 NeedsCompilation: no
-Packaged: 2024-10-16 20:51:33 UTC; mtes
+Packaged: 2025-08-28 06:56:50 UTC; mtes
 Author: Martijn Tennekes [aut, cre],
   Marco Puts [ctb],
   Achim Zeileis [ctb],
@@ -38,4 +37,4 @@ Author: Martijn Tennekes [aut, cre],
   Olivier Roy [ctb]
 Maintainer: Martijn Tennekes <mtennekes@gmail.com>
 Repository: CRAN
-Date/Publication: 2024-10-16 22:00:04 UTC
+Date/Publication: 2025-08-28 07:50:01 UTC

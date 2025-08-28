@@ -12,6 +12,7 @@ c4a(
   m = NA,
   type = c("cat", "seq", "div", "cyc", "bivs", "bivc", "bivd", "bivg"),
   reverse = FALSE,
+  diag_flip = FALSE,
   order = NULL,
   range = NA,
   colorsort = "orig",
@@ -30,15 +31,17 @@ c4a_na(
 )
 }
 \arguments{
-\item{palette}{name of the palette. See \code{\link{c4a_palettes}} for available palettes. If omitted, the default palette is provided by \code{c4a_default_palette}. The palette name can be prefixed with a \code{"-"} symbol, which will reverse the palette (this can also be done with the \code{reverse} argument).}
+\item{palette}{name of the palette. See \code{\link{c4a_palettes}} for available palettes. If omitted, the default palette is provided by \code{c4a_default_palette}. The palette name can be prefixed with a \code{"-"} symbol, which will reverse the palette (this can also be done with the \code{reverse} argument). For bivariate palettes, a \code{"-"} means reversed horizontally (columns), a \code{"|"}means reversed vertically (row), and a \code{"+"} means reversed in both directions. In addition, a \code{"//"} or \code{"\\\\"} will flip the palette diagonally. This can be used in combination with \code{"-"}, \code{"|"}, or \code{"+"}. E.g. \code{"-//"} will reverse the columns and flip the palette diagonally.}
 
-\item{n}{number of colors. If omitted then: for type \code{"cat"} the maximum number of colors is returned, for types \code{"seq"}, \code{"div"}, and \code{"cyc"}, 7 , 9, and 9 colors respectively.}
+\item{n}{number of colors. If omitted then: for type \code{"cat"} the maximum number of colors is returned, for types \code{"seq"}, \code{"div"}, and \code{"cyc"}, 7 , 9, and 9 colors respectively. For bivariate palettes \code{n} is the number of columns.}
 
 \item{m}{number of rows in case type is bivariate, so one of \code{"bivs"}, \code{"bivc"}, \code{"bivd"} or  \code{"bivg"} (see \code{\link{c4a_types}} for descriptions)}
 
 \item{type}{type of color palette, in case \code{palette} is not specified: one of \code{"cat"}, \code{"seq"}, \code{"div"}, \code{"cyc"}, \code{"bivs"}, \code{"bivc"}, \code{"bivd"}, \code{"bivg"}. Run \code{\link{c4a_types}} for descriptions.}
 
-\item{reverse}{should the palette be reversed?}
+\item{reverse}{should the palette be reversed? In case of a bivariate palette, a vector of two: the first indicates the horizontal direction (columns) and the second the vertical (rows).}
+
+\item{diag_flip}{should a bivariate palette be flipped diagonally?}
 
 \item{order}{order of colors. Only applicable for \code{"cat"} palettes}
 
